@@ -1,0 +1,271 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Entertainment, Sports, and Technology news</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style>
+select{
+	font-family:Tahoma, Geneva, sans-serif;
+	font-size:14px;
+	outline:none;
+}
+select:focus{
+	color:blue;
+}
+input[type='text']{
+	width:250px;
+	font-family:Tahoma, Geneva, sans-serif;
+	text-align:center;
+	outline:none;
+}
+div#searchResult{
+	position:absolute;
+	top:60px;
+	border:1px solid;
+	left:300px;
+	height:calc(100% - 60px);
+	box-sizing:border-box;
+}
+div#previous{
+	position:absolute;
+	top:10px;
+	font-size:45px;
+	left:550px;
+	cursor:pointer;
+	display:none;
+}
+div#next{
+	position:absolute;
+	top:10px;
+	font-size:45px;
+	left:650px;
+	cursor:pointer;
+	display:none;
+}
+select#titleSelect{
+	position:absolute;
+	top:5px;
+	left:500px;
+	font-family:Verdana, Geneva, sans-serif;
+	font-size:12px;
+	display:none;
+}
+div#recordAuthor{
+	color:#999;
+	font-style:italic;
+	font-family:"Courier New", Courier, monospace;
+	font-size:12px;
+	margin-bottom:5px;
+}
+div#recordTitle{
+	color:black;
+	font-family:Tahoma, Geneva, sans-serif;
+	font-size:14px;
+	font-weight:bold;
+	margin-bottom:5px;
+}
+div#recordDescription{
+	color:#639;
+	font-family:Verdana, Geneva, sans-serif;
+	font-size:14px;
+	margin-bottom:14px;
+}
+div#recordContent{
+	color:#666;
+	font-family:Verdana, Geneva, sans-serif;
+	font-size:14px;
+	margin-top:15px;
+	overflow:auto;
+}
+div#recordURL{
+	cursor:pointer;
+	color:blue;
+	text-decoration:underline;
+	font-size:15px;
+	margin-top:20px;
+}
+div#recordImg{
+	width:100%;
+	box-sizing:border-box;
+	overflow:auto;
+}
+</style>
+<script>
+var myAPIKey="fd73d5fbede94397b9a5c59957f85f4f";
+var jsonObj=null;
+var currentIndex=0; //index of record which is currently displaying
+function searching(){
+	var cat=document.getElementById("searchCategory").value;
+	var country=document.getElementById("country").value;
+	var keywordSearch=document.getElementById("keywordSearch").value;
+	var dateFrom=document.getElementById("dateFrom").value;
+	var dateTo=document.getElementById("dateTo").value;
+	var sortBy=document.getElementById("sortBy").value;
+	var query="category="+cat;
+	if(country!='0'){
+		query += "&country="+country;
+	}
+	if(keywordSearch.length>0){
+		query += "&q="+keywordSearch;
+	}
+	if(dateFrom.length>0){
+		query += "&from="+dateFrom;
+	}
+	if(dateTo.length>0){
+		query += "&to="+dateTo;
+	}
+	if(sortBy != '0'){
+		query += "&sortBy="+sortBy;
+	}
+	query += "&apiKey="+myAPIKey;
+	var url="http://newsapi.org/v2/top-headlines?"+query;
+	//alert(url);
+
+	$.get(url, {
+		},function(data, status){
+		   if(status=='success'){
+			   jsonObj=data.articles;
+			   currentIndex=0;
+			   processTitleList();
+			   displaying();
+		   }
+	  });
+}
+function displaying(){
+	if(jsonObj==null) return;
+	var obj= jsonObj[currentIndex];
+	if(currentIndex==0){
+		document.getElementById("previous").style.display='none';
+	}else{
+		document.getElementById("previous").style.display='block';
+	}
+	if(currentIndex== jsonObj.length-1){
+		document.getElementById("next").style.display='none';
+	}else{
+		document.getElementById("next").style.display='block';
+	}
+	displayInfo(obj);
+}
+function processTitleList(){
+	removeAllFromTitleList();
+	var titleSelect = document.getElementById("titleSelect");
+	for(var i=0; jsonObj!=null && i<jsonObj.length; i++){
+		var t=jsonObj[i].title;
+		if(t.length>25) t= t.substring(0,50)+"...";
+		var option = document.createElement("option");
+		option.text = t;
+		option.value=i;
+		titleSelect.add(option);
+	}
+	if(jsonObj!=null && jsonObj.length>0){
+		titleSelect.style.display='block';
+	}
+}
+
+function removeAllFromTitleList(){
+	var titleSelect = document.getElementById("titleSelect");
+	var length = titleSelect.options.length;
+	for (i = length-1; i >= 0; i--) {
+  		titleSelect.options[i] = null;
+	}
+	titleSelect.style.display='none';
+}
+function changeRecord(direction){
+	currentIndex += direction;
+	document.getElementById("titleSelect").selectedIndex=currentIndex;
+	displaying();
+}
+function displayInfo(obj){
+	if(obj.author==null)
+		obj.author="n/a";
+	document.getElementById('recordAuthor').innerHTML="Author(s): "+obj.author +" published at "+ obj.publishedAt;	
+	
+	document.getElementById('recordTitle').innerHTML="Title: "+obj.title;
+	if(obj.description==null){
+		document.getElementById('recordDescription').innerHTML="";
+	}else{
+		document.getElementById('recordDescription').innerHTML="<u>Description:</u> "+obj.description;
+	}
+	if(obj.urlToImage==null){
+		document.getElementById('recordImg').style.display='none';
+	}else{
+		
+		document.getElementById('recordImg').innerHTML="<img src='"+obj.urlToImage+"' width=350  alt='image not available' />";
+		document.getElementById('recordImg').style.display='block';
+	}
+	if(obj.content==null){
+		document.getElementById('recordContent').innerHTML="";
+	}else{
+		document.getElementById('recordContent').innerHTML=obj.content;
+	}
+	if(obj.url != null){
+		document.getElementById('recordURL').innerHTML="<a href=\""+obj.url+"\" target='_blank'>Click here for fulll story</a>";
+	}
+}
+</script>
+</head>
+
+<body>
+<h3>Entertainment, Sports, and Technology news headlines</h3>
+<form name='myform'>
+<table>
+<tr><td colspan='2'>
+    <select id='searchCategory' title='Select category'>
+        <option value='entertainment'>Entertainment</option>
+        <option value='sports'>Sports</option>
+        <option value='technology'>Technology</option>
+        <option value='business'>Business</option>
+    </select>
+</td></tr>
+<!--
+<tr><td colspan='2'>
+    <select id='source'>
+        <option value='0'>Optional-You may specify search sources</option>
+        <option value='techcrunch'>techcrunch</option>
+    </select>
+</td></tr> -->
+<tr><td colspan="2">
+    <select id='country' title='Select a country-not all countries are listed'>
+        <option value='0'>Country</option>
+        <option value='us'>United States</option>
+        <option value='cn'>China</option>
+        <option value='kr'>South Korea</option>
+        <option value='za'>South Africa</option>
+        <option value='au'>Australia</option>
+    </select>
+</td></tr>
+<tr><td colspan="2">
+	<input type='text' id='keywordSearch' maxlength="100" placeholder="key word search" />
+</td></tr>
+<tr><td colspan="2"><u>Search Period</</td></tr>
+<tr><td align="right">From:</td><td><input type='date' id='dateFrom' title="headlines from the date"/></td></tr>
+<tr><td align='right'>To:</td><td><input type='date' id='dateTo' title="headlines from the date"/></td></tr>
+<tr><td colspan="2">Sort by:
+ <select id='sortBy'>
+ 	<option value='0'>Sort the result by:</option>
+    <option value='publishedAt'>By published date</option>
+    <option value='poluparity'>By poluparity</option>
+ </select>
+</td></tr>
+<tr><td colspan="2" align="center">
+	<hr size='2' color='blue' />
+	<button onclick="searching();return false;"> Search </button>
+    <button onclick="document.myform.reset();"> Reset </button>
+</td></tr>
+</table>
+</form>
+<div id='previous' title='Previous record' onclick="changeRecord(-1);">&#171;</div>
+<div id='next' title='Next record' onclick="changeRecord(1);">&#187;</div>
+<select id='titleSelect' onchange="currentIndex=this.selectedIndex;displaying(); return false;">
+</select>
+<div id='searchResult'>
+    <div id='recordAuthor'></div>
+	<div id='recordTitle'></div>
+    <div id='recordDescription'></div>
+    <div id='recordImg'></div>
+    <div id='recordContent'></div>  
+    <div id='recordURL'></div> 
+</div>
+</body>
+</html>
